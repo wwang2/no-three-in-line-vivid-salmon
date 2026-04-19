@@ -60,24 +60,50 @@ insertion on the full grid.
 
 Starting from a 19-point greedy configuration and enlarging it to
 exactly K=20 members (1 random extra cell added), I run
-**fixed-size SA**:
+**fixed-size SA** (`simulated_anneal` in `search.py`):
 
 - state = 20 distinct cells in `[0,10)²`
-- energy  = number of collinear triples in the state  (0 = valid)
+- energy E = number of collinear triples in the state  (0 = valid)
 - neighbor = swap one random state member with a random non-member
-- temperature schedule: geometric, T₀=2.0 → T_end=0.01 over 100k steps
-- Metropolis acceptance on the triple-count delta
-- 20 independent restarts
+- temperature schedule: geometric, T₀ = 2.0 → T_end = 0.01 over
+  `iters = 100_000` steps
+- Metropolis acceptance on the triple-count delta ΔE
+- up to `sa_restarts = 20` independent SA seeds (`sa_seed + r` for
+  `r ∈ {0, …, 19}`)
 
-Trial 2 (out of 20) converged to E=0 within **~1.7 seconds**, yielding
-the 20-point configuration cached in `solution.py`. The move space
-is big enough (20 × 80 = 1600 swaps per sweep) that the SA walks out
-of the 19-point local optima very fast when seeded near one.
+With warm-start the very first restart (`sa_seed = 0`) converges to
+E=0 in about 0.3 seconds. Cold-started SA at K=20 (no greedy-19
+warm-start) almost always plateaus at E=1 — see the convergence panel
+(c) in `figures/results.png`. The move space is big enough
+(20 × 80 = 1600 swaps per sweep) that the SA walks out of the
+19-point local optima very fast when seeded near one.
 
-The critical insight is that K=20 from scratch has an extremely
-narrow basin (most random restarts terminate at E=1), but K=20
+The critical insight is that K=20 from a cold random start has an
+extremely narrow basin (most restarts terminate at E=1), but K=20
 warm-started from a valid K=19 finds E=0 reliably in seconds. The
 combination greedy → warm-start SA is what closes the gap.
+
+**Canonical reproducer.** `search.warm_start_sa_from_greedy19` in
+`search.py` is the canonical implementation of this pipeline. Running
+
+```python
+from search import warm_start_sa_from_greedy19
+warm_start_sa_from_greedy19(greedy_search_seed=3089, sa_seed=0, verbose=True)
+```
+
+reports:
+
+```
+[warm_start] greedy-19 found at seed=3089
+[warm_start] SA restart 0 (seed=0): E=0
+```
+
+and returns a valid 20-point configuration in under a second (the
+greedy-19 scan takes the same ~10s as before if you start at
+`greedy_search_seed=0`; starting at `3089` is effectively a cached
+hit). The cached `POINTS` in `solution.py` was discovered by an
+earlier ad-hoc run with slightly different SA seeds — both runs land
+in the same E=0 basin (the E=0 landscape has many 20-point optima).
 
 ## Final configuration
 
@@ -112,8 +138,17 @@ Panel (c): hybrid algebraic + SA (20 points, optimal).
 ![results](figures/results.png)
 
 Panel (a): strategy comparison bar chart (dashed green = target 20).
+Bars show the **typical** outcome: the "Random greedy (5000 restarts)"
+bar is labeled "16 (mode)" and annotated with a `max=19` cap, because
+only 2 of 5000 restarts ever reach 19 (see panel (b)).
 Panel (b): empirical distribution of random-greedy outcomes across
-5000 restarts — greedy alone plateaus at 19 and never reaches 20.
+5000 restarts — greedy alone modes at 16, maxes at 19, and never
+reaches 20.
+Panel (c): **SA energy descent** (triple-count E vs step, log-log).
+Warm-start from the greedy-19 kernel (blue) drops to E=0 within a few
+thousand steps; two representative cold-start runs (orange, grey)
+plateau at E=1 for the full 100k steps. Energies are shifted by
++0.5 so E=0 is visible on the log axis.
 
 ## Prior Art & Novelty
 
@@ -169,8 +204,15 @@ instances (where even the best-known count is below 2N).
 ## Glossary
 
 - **N** = 10, grid side length.
+- **K** = target set size for fixed-size SA (here K=20).
 - **SA** = Simulated Annealing.
 - **QR** = Quadratic Residue (values `x² mod p`).
+- **E** = energy of an SA state = number of collinear triples in the
+  state. E = 0 means the state is a valid no-three-in-line configuration;
+  E > 0 is the number of triples that must be eliminated.
+- **ΔE** = change in E produced by a proposed swap move
+  (ΔE = ΔE_remove + ΔE_add). Metropolis acceptance: always accept if
+  ΔE ≤ 0, else accept with probability exp(-ΔE / T).
 - **Collinear triple** = three grid points `(r₀,c₀), (r₁,c₁), (r₂,c₂)`
   whose integer cross product `(r₁-r₀)(c₂-c₀) - (c₁-c₀)(r₂-r₀) = 0`.
 - **2N ceiling** = Erdős–Szekeres conjectured upper bound of 2N points.
@@ -197,3 +239,23 @@ instances (where even the best-known count is below 2N).
 - What I tried: fixed-size SA with 1-swap neighborhoods, init = valid 19 + 1 extra
 - Metric: -20.0 across 3 eval seeds (E=0 reached in ~1.7s, trial 2/20)
 - Next: target met — exit via Terminal Checklist
+
+### Iteration 2 (retry — reproducibility pass)
+- What I tried: no solution change. Added canonical reproducer
+  `warm_start_sa_from_greedy19(greedy_search_seed=3089, sa_seed=0)`
+  to `search.py` so the 20-point pipeline can be re-executed
+  deterministically; aligned the default SA parameters in
+  `simulated_anneal` and `search_size` (T0=2.0, T_end=0.01,
+  iters=100_000) with the prose in this log.
+  Added a SA convergence panel (c) to `figures/results.png`
+  showing warm-start descending to E=0 vs cold-starts stuck at E=1.
+  Fixed the "Random greedy (5000 restarts)" bar to show 16 (mode) with
+  a max=19 annotation instead of a bare 19. Added E and K to the
+  Glossary. Created `research/references/registry.yaml`.
+- Metric: -20.0 across 3 eval seeds (unchanged — `POINTS` was not
+  modified; only documentation, a new reproducer function, and
+  figures changed).
+- Verified reproducer: `python3 orbits/01-algebraic-sa/search.py`
+  prints `greedy-19 found at seed=3089` / `SA restart 0 (seed=0): E=0`
+  and returns a valid 20-point configuration in under a second.
+- Next: exiting — target met and reproducibility gaps closed.

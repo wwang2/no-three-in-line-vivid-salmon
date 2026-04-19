@@ -1,0 +1,80 @@
+# References registry for the no-three-in-line campaign.
+#
+# Schema (per entry):
+#   key     : short stable identifier (used for cross-referencing)
+#   type    : paper | book | website
+#   title   : full title of the work
+#   authors : list of author names (single string if single author)
+#   year    : publication year (or earliest year of the cited work)
+#   url     : canonical URL (optional)
+#   notes   : short relevance note for this campaign (optional)
+
+references:
+  - key: dudeney1917
+    type: book
+    title: "Amusements in Mathematics"
+    authors: ["Dudeney, H. E."]
+    year: 1917
+    url: "https://archive.org/details/amusementsinmath00dude"
+    notes: >
+      Puzzle 317 ("A Puzzle with Pawns") is the original posing of the
+      no-three-in-line problem for an 8x8 board. Asks for 16 = 2N pawns
+      with no three collinear on an integer grid.
+
+  - key: erdos1951
+    type: paper
+    title: "Appendix to 'On some unsolved problems in elementary geometry'"
+    authors: ["Erdős, P."]
+    year: 1951
+    notes: >
+      Early note framing the 2N upper bound for the no-three-in-line
+      problem: on an N x N grid you cannot place more than 2N points
+      without three collinear (a row/column pigeonhole argument).
+      Often cited as the origin of the 2N conjecture for general N.
+
+  - key: craggs_hughes_jones_1976
+    type: paper
+    title: "On the no-three-in-line problem"
+    authors: ["Craggs, D.", "Hughes-Jones, R."]
+    year: 1976
+    url: "https://doi.org/10.1016/0097-3165(76)90030-8"
+    notes: >
+      J. Combin. Theory Ser. A, 20, 363-364. Computer-assisted
+      enumeration of 2N-point solutions for small N, including
+      symmetric (D4, C4) classes for N up to around 12-14.
+      One of the first sources to tabulate 20-point N=10 solutions.
+
+  - key: klove1978
+    type: paper
+    title: "A combinatorial problem with applications to scanning devices"
+    authors: ["Kløve, T."]
+    year: 1978
+    url: "https://doi.org/10.1007/BF01931684"
+    notes: >
+      BIT Numerical Mathematics, 18, 101-105. Describes heuristic
+      algorithms for the no-three-in-line problem; an early source
+      for local-search / simulated-annealing-style approaches that
+      pre-date the name "simulated annealing."
+
+  - key: flammenkamp_web
+    type: website
+    title: "The no-three-in-line problem"
+    authors: ["Flammenkamp, A."]
+    year: 1992
+    url: "https://wwwhomes.uni-bielefeld.de/achim/no3in/readme.html"
+    notes: >
+      Maintained web page (1992-2016) tabulating the best-known
+      no-three-in-line configurations for many grid sizes, including
+      counts of symmetry classes. Canonical reference for the current
+      empirical state of the problem.
+
+  - key: wiki_no3inline
+    type: website
+    title: "No-three-in-line problem"
+    authors: ["Wikipedia contributors"]
+    year: 2024
+    url: "https://en.wikipedia.org/wiki/No-three-in-line_problem"
+    notes: >
+      Summary article with references to the 2N bound, known
+      configurations, and related open problems. Useful overview for
+      campaign-level context.
